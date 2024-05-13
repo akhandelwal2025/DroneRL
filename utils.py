@@ -30,6 +30,9 @@ class Vector3:
     def to_numpy(self):
         return np.asarray([self.x, self.y, self.z])
     
+    def to_list(self):
+        return [self.x, self.y, self.z]
+    
     @staticmethod
     def from_numpy(np_arr):
         if np_arr.size == 3:
@@ -55,13 +58,20 @@ class Pose:
         self.omega = omega
         self.a = a
         self.alpha = alpha
-
+    
 class Thrust:
     # fl, fr, rl, rr are represented as percents (i.e. front-left = 0.1 = 10% thrust)
     # allows policy to output logits that are directly used to control thrust
     # max thrust is in Newtons
     def __init__(self, fl=0, fr=0, rl=0, rr=0, max_thrust=100):
         self.max_thrust = max_thrust
+        self.fl = Vector3(0, 0, fl * self.max_thrust)
+        self.fr = Vector3(0, 0, fr * self.max_thrust)
+        self.rl = Vector3(0, 0, rl * self.max_thrust)
+        self.rr = Vector3(0, 0, rr * self.max_thrust)
+    
+    def set_thrusts(self, fl, fr, rl, rr):
+        # fl, fr, rl, rr are in %
         self.fl = Vector3(0, 0, fl * self.max_thrust)
         self.fr = Vector3(0, 0, fr * self.max_thrust)
         self.rl = Vector3(0, 0, rl * self.max_thrust)

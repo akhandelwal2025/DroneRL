@@ -15,10 +15,15 @@ class Drone:
         tau_rr = Vector3.cross(config.rr_r, self.thrust.rr)
 
         # yaw torques created by mismatch
-        tau_yaw = config.force_to_torque(self.thrust.sum())
-
+        tau_yaw = self.thrust.sum() * config.force_to_torque # MAYBE?
+        
         # return sum of torques
         return tau_fl + tau_fr + tau_rl + tau_rr + tau_yaw
+    
+    def thrust_normal_vector(self):
+        body_to_inertial = self.body_to_inertial()
+        f_total_body = self.thrust.sum()
+        return Vector3.from_numpy(body_to_inertial @ f_total_body.to_numpy())
     
     def body_to_inertial(self):
         Cx, Cy, Cz = np.cos(self.pose.theta.x), np.cos(self.pose.theta.y), np.cos(self.pose.theta.z)
@@ -46,21 +51,22 @@ class Drone:
         self.pose.omega += delta_omega
     
     def update_theta(self, dt):
-        delta_theta = self.pose.omega * dt + 0.5 * self.pose.alpha * (dt ** 2) #theta = omega * dt + 1/2 * alpha * dt^2
+        delta_theta = self.pose.omega * dt + self.pose.alpha * 0.5 * (dt ** 2) #theta = omega * dt + 1/2 * alpha * dt^2
         self.pose.theta += delta_theta
     
     def update_a(self):
         f_total_body = self.thrust.sum() # this is in body frame, always going to be +z. Need to convert this to inertial through euler rotation
         f_inertial = Vector3.from_numpy(self.body_to_inertial() @ f_total_body.to_numpy()) # this is now in inertial frame
-        f_inertial.z -= 9.8 # m/s^2, subtract gravitational acceleration in z-dir
         self.pose.a = f_inertial / config.mass
+        self.pose.a.z -= 9.8 # m/s^2, subtract gravitational acceleration in z-dir
+        print(self.pose.a)
     
     def update_v(self, dt):
         delta_v = self.pose.a * dt
         self.pose.v += delta_v
     
     def update_x(self, dt):
-        delta_x = self.pose.v * dt + 0.5 + self.pose.a * (dt ** 2) #x = v * dt + 1/2 * a * dt^2
+        delta_x = self.pose.v * dt + self.pose.a * 0.5 * (dt ** 2) #x = v * dt + 1/2 * a * dt^2
         self.pose.x += delta_x
     
     def update(self, dt):

@@ -4,8 +4,8 @@ import numpy as np
 
 # Drone Parameters
 mass = 0.468 #kg
-max_thrust = 100 #N
-rotor_arm_length = 0.2 #m
+max_thrust = 10 #N
+rotor_arm_length = 0.225 #m
 
 lift_coeff = 2.980 * 10e-6 #k
 drag_coeff = 1.140 * 10e-7 #b
@@ -26,4 +26,7 @@ fl_r = Vector3(math.cos(fl_theta), math.sin(fl_theta), 0) * rotor_arm_length
 rl_r = Vector3(math.cos(rl_theta), math.sin(rl_theta), 0) * rotor_arm_length
 rr_r = Vector3(math.cos(rr_theta), math.sin(rr_theta), 0) * rotor_arm_length
 
-
+print(fr_r)
+print(fl_r)
+print(rl_r)
+print(rr_r)
