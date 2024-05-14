@@ -21,6 +21,17 @@ fl_theta = math.radians(135)
 rl_theta = math.radians(225)
 rr_theta = math.radians(315)
 
+# CW (+1), CCW (-1) config
+"""
+1   -1
+
+-1   1
+"""
+fl_rot_dir = 1
+fr_rot_dir = -1
+rl_rot_dir = -1
+rr_rot_dir = 1
+
 fr_r = Vector3(math.cos(fr_theta), math.sin(fr_theta), 0) * rotor_arm_length
 fl_r = Vector3(math.cos(fl_theta), math.sin(fl_theta), 0) * rotor_arm_length
 rl_r = Vector3(math.cos(rl_theta), math.sin(rl_theta), 0) * rotor_arm_length

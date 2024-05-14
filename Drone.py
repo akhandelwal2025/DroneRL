@@ -15,15 +15,20 @@ class Drone:
         tau_rr = Vector3.cross(config.rr_r, self.thrust.rr)
 
         # yaw torques created by mismatch
-        tau_yaw = self.thrust.sum() * config.force_to_torque # MAYBE?
+        tau_yaw_fl = self.thrust.fl * config.force_to_torque * config.fl_rot_dir 
+        tau_yaw_fr = self.thrust.fr * config.force_to_torque * config.fr_rot_dir
+        tau_yaw_rl = self.thrust.rl * config.force_to_torque * config.rl_rot_dir
+        tau_yaw_rr = self.thrust.rr * config.force_to_torque * config.rr_rot_dir
+        tau_yaw = tau_yaw_fl + tau_yaw_fr + tau_yaw_rl + tau_yaw_rr
         
         # return sum of torques
         return tau_fl + tau_fr + tau_rl + tau_rr + tau_yaw
     
     def thrust_normal_vector(self):
         body_to_inertial = self.body_to_inertial()
-        f_total_body = self.thrust.sum()
-        return Vector3.from_numpy(body_to_inertial @ f_total_body.to_numpy())
+        dir_travel = Vector3.from_numpy(body_to_inertial @ Vector3(0, 0, 1).to_numpy()) 
+        dir_normal = Vector3.from_numpy(body_to_inertial @ Vector3(1, 0, 0).to_numpy())
+        return dir_travel, dir_normal
     
     def body_to_inertial(self):
         Cx, Cy, Cz = np.cos(self.pose.theta.x), np.cos(self.pose.theta.y), np.cos(self.pose.theta.z)
@@ -59,7 +64,6 @@ class Drone:
         f_inertial = Vector3.from_numpy(self.body_to_inertial() @ f_total_body.to_numpy()) # this is now in inertial frame
         self.pose.a = f_inertial / config.mass
         self.pose.a.z -= 9.8 # m/s^2, subtract gravitational acceleration in z-dir
-        print(self.pose.a)
     
     def update_v(self, dt):
         delta_v = self.pose.a * dt

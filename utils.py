@@ -2,9 +2,9 @@ import numpy as np
 
 class Vector3:
     def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
+        self.x = round(x, 5)
+        self.y = round(y, 5)
+        self.z = round(z, 5)
 
     def __add__(self, addend):
         if isinstance(addend, Vector3):
