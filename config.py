@@ -59,5 +59,9 @@ ACTION_DIM = 4
 # An episode is a single trajectory rollout (starting from init state then following policy to terminal state)
 NUM_BATCHES = 64
 EPISODES_PER_BATCH = 128
+PPO_EPOCHS_PER_BATCH = 5 # arbitrarily chosen
 
 DISCOUNT_FACTOR = 0.99
+EPSILON = 0.2 # arbitrarily chosen, recommended by original PPO paper?
+
+INIT_LR = 0.005 # ADAMW Optimizer

@@ -133,7 +133,7 @@ class Episode:
         self.log_probs.append(log_prob)
 
     def get_states(self):
-        # self.states.shape = (N,), each pose contains 18 elements (x, v, a, theta, omega, alpha)
+        # self.states.shape = Nx18, each pose contains 18 elements (x, v, a, theta, omega, alpha)
         # return it as Nx18 matrix
         N = len(self.states)
         to_ret = np.empty((N, 18))
@@ -141,12 +141,23 @@ class Episode:
             to_ret[i] = state.to_numpy()
         return to_ret
     
+    def get_log_probs(self):
+        # self.log_probs.shape = Nx4, N = num states, 4 = log_prob of each element in the action
+        return np.asarray(self.log_probs)
+    
+    def get_advantages(self):
+        return self.advantages
+
+    def get_rewards_to_go(self):
+        return self.rewards_to_go
+    
     def compute_discounted_reward_to_go(self):
         running = 0
         for i, reward in enumerate(self.rewards):
             running += reward * (self.discount_factor ** i)
             self.rewards_to_go.append(running)
         self.rewards_to_go[::-1]
+        self.rewards_to_go = np.asarray(self.rewards_to_go)
     
     def compute_advantages(self, values):
         # values = np.ndarray, Nx1 - N = num states
@@ -166,7 +177,22 @@ class Batch:
         self.batch_num = batch_num
         self.eps_per_batch = eps_per_batch
         self.episodes = []
-    
+        self.all_states = []
+        self.all_log_probs = []
+        self.all_advantages = []
+        self.all_rewards_to_go = []
+
     def add_eps(self, eps):
         self.episodes.append(eps)
 
+    def process_all_eps(self):
+        for eps in self.episodes:
+            self.all_states.append(eps.get_states())
+            self.all_log_probs.append(eps.get_log_probs())
+            self.all_advantages.append(eps.get_advantages())
+            self.all_rewards_to_go.append(eps.get_rewards_to_go())
+        
+        self.all_states = np.concatenate(self.all_states, axis=0) # (eps_per_batch * N, 18)
+        self.all_log_probs = np.concatenate(self.all_log_probs, axis=0) # (eps_per_batch * N, 4)
+        self.all_advantages = np.asarray(self.all_advantages) # (N,)
+        self.all_rewards_to_go = np.asarray(self.all_rewards_to_go) # (N,)
