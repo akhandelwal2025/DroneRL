@@ -1,12 +1,41 @@
+import copy
 from utils import *
 import config
 import numpy as np
 
 class Drone:
-    def __init__(self, init_x, init_theta, init_v, init_omega, init_a, init_alpha):
-        self.pose = Pose(init_x, init_theta, init_v, init_omega, init_a, init_alpha)
+    def __init__(self, init_pose, target_pose):
+        self.init_pose = init_pose # used to reset env 
+        self.pose = init_pose # curr pose
+        self.target_pose = target_pose
         self.thrust = Thrust(max_thrust=config.max_thrust)
+        self.done = False
+
+    def update_done(self):
+        # the only terminal state is if the drone has hit the ground
+        # TODO: maybe want to consider bounds for environment in x, y as well as terminal state
+        # if too high rotation or acceleration
+        self.done = self.pose.x.z <= 0
     
+    def reset(self):
+        self.pose = copy.deepcopy(self.init_pose)
+        self.done = False
+        return self.get_pose(), self.done
+    
+    def get_pose(self):
+        return copy.deepcopy(self.pose)
+    
+    def set_thrusts(self, fl, fr, rl, rr):
+        self.thrust.set_thrusts(fl, fr, rl, rr)
+
+    def calc_reward(self):
+        # reward formulation: max(0, 2 - (||p_t - p_target|| + 0.1 * ||a_t| + 0.1 * ||v_t| + 0.1 * ||omega_t||))
+        rew_x = (self.pose.x - self.target_pose.x).l2_norm()
+        rew_accel = 0.1 * self.pose.a.l2_norm()
+        rew_vel = 0.1 * self.pose.v.l2_norm()
+        rew_omega = 0.1 * self.pose.omega.l2_norm()
+        return max(0, 2 - rew_x + rew_accel + rew_vel + rew_omega)
+
     def calc_torques(self):
         # pitch, roll torques created by rotors away from COM
         tau_fl = Vector3.cross(config.fl_r, self.thrust.fl)
@@ -84,6 +113,10 @@ class Drone:
         self.update_v(dt)
         self.update_x(dt)
 
+        # update if in terminal state
+        self.update_done()
+
+        return self.get_pose(), self.calc_reward(), self.done
 
 
     

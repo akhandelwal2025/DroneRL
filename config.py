@@ -2,7 +2,7 @@ from utils import *
 import math
 import numpy as np
 
-# Drone Parameters
+# -------- Drone Parameters --------
 mass = 0.468 #kg
 max_thrust = 10 #N
 rotor_arm_length = 0.225 #m
@@ -37,7 +37,27 @@ fl_r = Vector3(math.cos(fl_theta), math.sin(fl_theta), 0) * rotor_arm_length
 rl_r = Vector3(math.cos(rl_theta), math.sin(rl_theta), 0) * rotor_arm_length
 rr_r = Vector3(math.cos(rr_theta), math.sin(rr_theta), 0) * rotor_arm_length
 
-print(fr_r)
-print(fl_r)
-print(rl_r)
-print(rr_r)
+init_pose = Pose(x=Vector3(2, 5, 1), 
+                 theta=Vector3(0, 0, 0),
+                 v=Vector3(0, 0, 0),
+                 omega=Vector3(0, 0, 0),
+                 a=Vector3(0, 0, 0),
+                 alpha=Vector3(0, 0, 0))
+
+target_pose = Pose(x=Vector3(0, 0, 10), 
+                   theta=Vector3(0, 0, 0),
+                   v=Vector3(0, 0, 0),
+                   omega=Vector3(0, 0, 0),
+                   a=Vector3(0, 0, 0),
+                   alpha=Vector3(0, 0, 0))
+
+# -------- PPO Parameters --------
+STATE_DIM = 9
+ACTION_DIM = 4
+
+# Each batch contains multiple episodes
+# An episode is a single trajectory rollout (starting from init state then following policy to terminal state)
+NUM_BATCHES = 64
+EPISODES_PER_BATCH = 128
+
+DISCOUNT_FACTOR = 0.99
