@@ -21,6 +21,7 @@ def train():
                   target_pose=config.target_pose)
     
     def collect_batch(batch_num):
+        print(f"Collecting Batch {batch_num}")
         batch = Batch(batch_num=batch_num,
                       eps_per_batch=config.EPISODES_PER_BATCH)
 
@@ -43,16 +44,18 @@ def train():
                 eps.add_action(action)
                 eps.add_reward(reward)
                 eps.add_log_prob(log_probs)
-    
+                print(f"     Episode {eps_num} | Reward: {reward} | Done: {done}")
             batch.add_eps(eps)
 
         return batch
     
     for batch_num in range(config.NUM_BATCHES):
+        print(f"-------------------------- START BATCH {batch_num} -------------------------- ")
         # step 3: collect set of trajectories D_k = {tau_i} by running policy pi_k = pi(theta_k) in the environment
         batch = collect_batch(batch_num)
 
         # step 4: compute rewards-to-go R-hat_t
+        print(f"Batch: {batch_num}: Computing Discounted Returns")
         for eps in batch.episodes:
             eps.compute_discounted_reward_to_go()
         
@@ -60,6 +63,7 @@ def train():
         # A_pi(s, a) = Q_pi(s, a) - V_phi_k(s)
         # Q_pi(s, a) = reward-to-gos (calculated in previous step)
         # V_phi_k(s) = value function in current iteration (k, parameters=phi), evaluated on every state
+        print(f"Batch: {batch_num}: Computing Advantage")
         for eps in batch.episodes:
             eps_states = eps.get_states() # np.ndarray (Nx18, N = num states, 18 = num elements defining pose - x, v, a, theta, omega, alpha)
             eps_states = torch.from_numpy(eps_states).float()
@@ -71,6 +75,7 @@ def train():
         # however since PPO enforces a trust region, thereby preventing too steep of a change in the policy per update, empirically it is found to work with slight off-policy
         # therefore, by running multiple updates on the same batch (multiple epochs), we are increasing sample efficiency by allowing the model to train off-policy
         batch.process_all_eps()
+        print(f"Batch: {batch_num}: Updating Policy + Value Networks")
         for epoch in range(config.PPO_EPOCHS_PER_BATCH):
             policy.forward_batch_states(torch.from_numpy(batch.all_states).float())
             _, new_log_probs = policy.generate_action_log_prob()
@@ -79,13 +84,14 @@ def train():
             ratios = np.exp(new_log_probs - old_log_probs)
             surr1 = ratios * batch.all_advantages
             surr2 = np.clip(ratios, 1+config.EPSILON, 1-config.EPSILON) * batch.all_advantages
-            policy_loss = -np.min(surr1, surr2).mean()
+            policy_loss = -np.minimum(surr1, surr2).mean()
 
-            new_values = value.forward_batch_states(torch.from_numpy(batch.all_states).float())  
-            value_loss = torch.nn.functional.mse_loss(new_values, batch.all_rewards_to_go)
+            new_values = value.forward_batch_states(torch.from_numpy(batch.all_states).float()) 
+            value_loss = ((new_values - batch.all_rewards_to_go) ** 2).mean() # mse-loss
 
             policy.backward(policy_loss)
             value.backward(value_loss)
-
+            print(f"     Epoch {epoch} | Policy Loss: {policy_loss} | Value Loss: {value_loss}")
+        
 if __name__ == "__main__":
     train()
