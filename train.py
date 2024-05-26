@@ -38,7 +38,7 @@ def train():
                 action, log_probs = policy.generate_action_log_prob()
 
                 env.set_thrusts(*action)
-                state, reward, done = env.step()
+                state, reward, done = env.update(dt=config.dt)
                 
                 eps.add_action(action)
                 eps.add_reward(reward)
@@ -62,6 +62,7 @@ def train():
         # V_phi_k(s) = value function in current iteration (k, parameters=phi), evaluated on every state
         for eps in batch.episodes:
             eps_states = eps.get_states() # np.ndarray (Nx18, N = num states, 18 = num elements defining pose - x, v, a, theta, omega, alpha)
+            eps_states = torch.from_numpy(eps_states).float()
             values = value.forward_batch_states(eps_states) # (Nx1)
             eps.compute_advantages(values)
         
@@ -71,7 +72,7 @@ def train():
         # therefore, by running multiple updates on the same batch (multiple epochs), we are increasing sample efficiency by allowing the model to train off-policy
         batch.process_all_eps()
         for epoch in range(config.PPO_EPOCHS_PER_BATCH):
-            policy.forward_batch_states(batch.all_states)
+            policy.forward_batch_states(torch.from_numpy(batch.all_states).float())
             _, new_log_probs = policy.generate_action_log_prob()
             
             old_log_probs = batch.all_log_probs
@@ -80,7 +81,7 @@ def train():
             surr2 = np.clip(ratios, 1+config.EPSILON, 1-config.EPSILON) * batch.all_advantages
             policy_loss = -np.min(surr1, surr2).mean()
 
-            new_values = value.forward_batch_states(batch.all_states)  
+            new_values = value.forward_batch_states(torch.from_numpy(batch.all_states).float())  
             value_loss = torch.nn.functional.mse_loss(new_values, batch.all_rewards_to_go)
 
             policy.backward(policy_loss)

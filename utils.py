@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 class Vector3:
     def __init__(self, x, y, z):
@@ -75,6 +76,9 @@ class Pose:
                                self.omega.to_numpy(),
                                self.a.to_numpy(),
                                self.alpha.to_numpy()), axis=0)
+
+    def to_tensor(self):
+        return torch.from_numpy(self.to_numpy()).float()
     
 class Thrust:
     # fl, fr, rl, rr are represented as percents (i.e. front-left = 0.1 = 10% thrust)
@@ -194,5 +198,5 @@ class Batch:
         
         self.all_states = np.concatenate(self.all_states, axis=0) # (eps_per_batch * N, 18)
         self.all_log_probs = np.concatenate(self.all_log_probs, axis=0) # (eps_per_batch * N, 4)
-        self.all_advantages = np.asarray(self.all_advantages) # (N,)
-        self.all_rewards_to_go = np.asarray(self.all_rewards_to_go) # (N,)
+        self.all_advantages = np.concatenate(self.all_advantages, axis=0) # (N,)
+        self.all_rewards_to_go = np.concatenate(self.all_rewards_to_go, axis=0) # (N,)

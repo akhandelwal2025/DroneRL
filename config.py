@@ -6,6 +6,7 @@ import numpy as np
 mass = 0.468 #kg
 max_thrust = 10 #N
 rotor_arm_length = 0.225 #m
+dt = 0.1 #s
 
 lift_coeff = 2.980 * 10e-6 #k
 drag_coeff = 1.140 * 10e-7 #b
@@ -52,7 +53,7 @@ target_pose = Pose(x=Vector3(0, 0, 10),
                    alpha=Vector3(0, 0, 0))
 
 # -------- PPO Parameters --------
-STATE_DIM = 9
+STATE_DIM = 18
 ACTION_DIM = 4
 
 # Each batch contains multiple episodes

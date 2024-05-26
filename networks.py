@@ -25,15 +25,18 @@ class FeedForwardNetwork(torch.nn.Module):
                                            lr=init_lr)
         
     def forward_single_state(self, input: Pose):
-        input = input.to_numpy()
-        self.output = self.model(input)
-
-    def forward_batch_states(self, input: np.ndarray):
+        input = input.to_tensor()
+        print(input.shape)
+        self.output = self.model(input).detach().numpy()
+        return self.output
+    
+    def forward_batch_states(self, input: torch.Tensor):
         # input.shape = (Nx18) - N = number of states, 18 = elements in pose
         # doing this batch update works because output will be of size (Nx4) - i.e. for each state, you get four rotor means
         # log_std stays the same for all states, it is only updated on backward pass, so sampling actions should be fine 
-        self.output = self.model(input)
-
+        self.output = self.model(input).detach().numpy()
+        return self.output
+    
     def backward(self, loss):
         if isinstance(loss, float):
             loss = torch.tensor(loss, dtype=torch.float32, requires_grad=True)
@@ -45,7 +48,7 @@ class Policy(FeedForwardNetwork):
     def __init__(self, input, hidden, action_dim, init_lr):
         super().__init__(input, hidden, action_dim, init_lr)
         self.model.add_module("final_softmax", torch.nn.Softmax()) # adding softmax at output to constrain thrust outputs between 0-1
-        self.log_std = torch.nn.Parameter(torch.zeros(action_dim))
+        self.log_std = torch.nn.Parameter(torch.zeros(1))
 
         self.sampled_actions = np.empty(action_dim)
         self.sampled_log_probs = np.empty(action_dim)
@@ -62,7 +65,7 @@ class Policy(FeedForwardNetwork):
         # log-prob = log of PDF = log(f(x | mu, sigma)) = -log(sigma) - 1/2*log(2 * pi) - ((x - mu) ** 2)/(2 * sigma ** 2)
 
         # self.output = Nx4, sampled_action = Nx4
-        std = torch.exp(self.log_std)[0] # sigma
+        std = torch.exp(self.log_std).detach().numpy() # sigma
         self.sampled_actions = np.random.normal(loc=self.output, scale=std) #loc = mean/mu, scale = std/sigma
         self.sampled_actions = np.clip(self.sampled_actions, 0, 1) # clip sampled action to [0, 1]
         self.sampled_log_probs = -np.log(std) - 0.5*np.log(2 * np.pi) - ((self.sampled_actions - self.output) ** 2/(2 * (std ** 2)))

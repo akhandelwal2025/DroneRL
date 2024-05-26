@@ -15,7 +15,7 @@ g_force = 9.8 * config.mass #N
 g_force_per_motor = g_force/4
 thrust_per_motor = g_force_per_motor/config.max_thrust
 # drone.set_thrusts(thrust_per_motor-1, thrust_per_motor-1, thrust_per_motor-1, thrust_per_motor+1)
-drone.set_thrusts(thrust_per_motor, thrust_per_motor, thrust_per_motor, thrust_per_motor)
+drone.set_thrusts(thrust_per_motor+0.1, thrust_per_motor+0.1, thrust_per_motor+0.1, thrust_per_motor+0.1)
 
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
