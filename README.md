@@ -11,7 +11,7 @@ This is a simplified MPC approach that:
 
 Key characteristics:
 - No reference trajectory is used - optimization targets a single point
-- Linearized dynamics are recomputed at each time step
+- The linearized dynamics are computed once at each time step based on the drone's current (real) state and are then used to simulate the entire predicted (future) trajectory.
 - Simple quadratic cost function penalizing distance to target and control effort
 
 ## Setup Instructions
