@@ -5,6 +5,7 @@ import time
 import math
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from mpc import mpc_predict_future_n_steps
 
 # Create Drone instance
 drone = Drone(init_pose=config.init_pose,
@@ -27,10 +28,13 @@ ax.set_xlim(-10, 10)  # Set x-axis limits to a range around zero
 ax.set_ylim(-10, 10)  # Set y-axis limits to a range around zero
 ax.set_zlim(0, 25)
 
+
 # Show plot and update without closing
 plt.ion()  # Turn on interactive mode
 plt.show()
 
+dt = 0.01 #sec
+future_steps = 30
 while True:
     print(drone.thrust)
     print(f"Visualizing... | {drone.pose.x} | {drone.pose.theta}")
@@ -45,11 +49,19 @@ while True:
     ax.set_xlim(-10, 10)  # Set x-axis limits to a range around zero
     ax.set_ylim(-10, 10)  # Set y-axis limits to a range around zero
     ax.set_zlim(0, 25)
-    
+
+    x0 = drone.pose.to_numpy()[0:12]
+    u0 = drone.thrust.to_numpy() / config.max_thrust
+    x_target = drone.target_pose.to_numpy()[0:12]
+    u_opt, x_pred = mpc_predict_future_n_steps(x0, u0, x_target, future_steps, dt)
+    drone.set_thrusts(u_opt[0], u_opt[1], u_opt[2], u_opt[3])
+    # plot predicted trajectory
+    ax.plot(x_pred[0, :], x_pred[1, :], x_pred[2, :], marker='o', color='green')
 
     dt = 0.01 #sec
     state, reward, done = drone.update(dt)
-    print(f"     Reward: {reward} | Done: {done}")
+    ax.scatter(drone.target_pose.x.x, drone.target_pose.x.y, drone.target_pose.x.z, marker='o', color='red')
+
     # time.sleep(3)
 # Close the visualization window
 vis.destroy_window()

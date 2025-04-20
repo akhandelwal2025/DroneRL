@@ -110,6 +110,9 @@ class Thrust:
     def sum(self):
         return self.fl + self.fr + self.rl + self.rr
     
+    def to_numpy(self):
+        return np.asarray([self.fl.z, self.fr.z, self.rl.z, self.rr.z])
+    
 class Episode:
     # an episode represents a single rollout
     # start in init state, then follow policy until terminal state
