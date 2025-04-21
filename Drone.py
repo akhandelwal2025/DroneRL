@@ -7,7 +7,17 @@ class Drone:
     def __init__(self, init_pose, target_pose):
         self.init_pose = init_pose # used to reset env 
         self.pose = init_pose # curr pose
-        self.target_pose = target_pose
+        if isinstance(target_pose, Pose):
+            self.target_pose = target_pose
+        elif isinstance(target_pose, np.ndarray):
+            self.target_pose = Pose(x = Vector3.from_numpy(target_pose),
+                                    theta=Vector3(0, 0, 0),
+                                    v=Vector3(0, 0, 0),
+                                    omega=Vector3(0, 0, 0),
+                                    a=Vector3(0, 0, 0),
+                                    alpha=Vector3(0, 0, 0))
+        else:
+            raise Exception(f"input type {type(target_pose)} not supported for 'target_pose'")
         self.thrust = Thrust(max_thrust=config.max_thrust)
         self.done = False
 
@@ -92,7 +102,7 @@ class Drone:
         f_total_body = self.thrust.sum() # this is in body frame, always going to be +z. Need to convert this to inertial through euler rotation
         f_inertial = Vector3.from_numpy(self.body_to_inertial() @ f_total_body.to_numpy()) # this is now in inertial frame
         self.pose.a = f_inertial / config.mass
-        self.pose.a.z -= 9.8 # m/s^2, subtract gravitational acceleration in z-dir
+        # self.pose.a.z -= 9.8 # m/s^2, subtract gravitational acceleration in z-dir
     
     def update_v(self, dt):
         delta_v = self.pose.a * dt

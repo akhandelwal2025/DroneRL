@@ -8,9 +8,6 @@ from mpl_toolkits.mplot3d import Axes3D
 import casadi as ca
 import numpy as np
 
-
-
-
 def mpc_predict_future_n_steps(x0, u0, x_target, n_steps, dt=0.1):
     # Define symbolic state and control variables
     x   = ca.SX.sym('x',3)     # Position
@@ -39,7 +36,8 @@ def mpc_predict_future_n_steps(x0, u0, x_target, n_steps, dt=0.1):
     # Compute thrust vector in body frame and convert to world frame
     T = u * max_thrust                              # Actual thrust in N
     acc_b = ca.vertcat(0, 0, ca.sum1(T)) / m        # Body-frame acceleration (along z-axis)
-    acc_w = R @ acc_b - ca.vertcat(0, 0, 9.8)       # World-frame acceleration (gravity subtracted)
+    # acc_w = R @ acc_b - ca.vertcat(0, 0, 9.8)       # World-frame acceleration (gravity subtracted)
+    acc_w = R @ acc_b
 
     # Compute torques from each motor's position and thrust
     fr_theta = math.radians(45)

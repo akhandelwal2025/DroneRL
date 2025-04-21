@@ -38,7 +38,7 @@ fl_r = Vector3(math.cos(fl_theta), math.sin(fl_theta), 0) * rotor_arm_length
 rl_r = Vector3(math.cos(rl_theta), math.sin(rl_theta), 0) * rotor_arm_length
 rr_r = Vector3(math.cos(rr_theta), math.sin(rr_theta), 0) * rotor_arm_length
 
-init_pose = Pose(x=Vector3(2, 5, 1), 
+init_pose = Pose(x=Vector3(0, 0, 0), 
                  theta=Vector3(0, 0, 0),
                  v=Vector3(0, 0, 0),
                  omega=Vector3(0, 0, 0),
