@@ -9,7 +9,8 @@ from mpc import mpc_predict_future_n_steps
 from trajectories import gen_straight_line, gen_spiral
 
 # Create Drone instance
-waypoints = gen_straight_line()
+# waypoints = gen_straight_line()
+waypoints = gen_spiral()
 drone = Drone(init_pose=config.init_pose,
               target_pose=waypoints[0])
 
@@ -35,8 +36,8 @@ ax.set_zlim(0, 25)
 plt.ion()  # Turn on interactive mode
 plt.show()
 
-dt = 0.01 #sec
-future_steps = 30
+dt = 0.1 #sec
+future_steps = 10
 i = 0
 while True:
     print(drone.thrust)
@@ -65,7 +66,7 @@ while True:
     # plot predicted trajectory
     # ax.plot(x_pred[0, :], x_pred[1, :], x_pred[2, :], marker='o', color='green')
 
-    dt = 0.01 #sec
+    dt = 0.1 #sec
     state, reward, done = drone.update(dt)
 
     # plot completed waypoints in green

@@ -102,7 +102,7 @@ class Drone:
         f_total_body = self.thrust.sum() # this is in body frame, always going to be +z. Need to convert this to inertial through euler rotation
         f_inertial = Vector3.from_numpy(self.body_to_inertial() @ f_total_body.to_numpy()) # this is now in inertial frame
         self.pose.a = f_inertial / config.mass
-        # self.pose.a.z -= 9.8 # m/s^2, subtract gravitational acceleration in z-dir
+        self.pose.a.z -= 9.8 # m/s^2, subtract gravitational acceleration in z-dir
     
     def update_v(self, dt):
         delta_v = self.pose.a * dt

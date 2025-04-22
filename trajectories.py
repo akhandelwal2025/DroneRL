@@ -16,7 +16,6 @@ def gen_straight_line(start_pose = np.asarray([0., 0., 0.]),
         curr_pose = next_pose   
     return waypoints
 
-NUM_SPIRAL_PERIODS = 5
 def gen_spiral(spiral_periods = 5,
                num_waypoints = 250):
     t = 0

@@ -8,7 +8,9 @@ from mpl_toolkits.mplot3d import Axes3D
 import casadi as ca
 import numpy as np
 
-def mpc_predict_future_n_steps(x0, u0, x_target, n_steps, dt=0.1):
+def mpc_predict_future_n_steps(x0, u0, x_target, n_steps, dt=0.1, optimizer='ipopt'):
+    assert optimizer in ['ipopt', 'qpoases'], "only supported optimizers are ipopt and qpoases"
+
     # Define symbolic state and control variables
     x   = ca.SX.sym('x',3)     # Position
     th  = ca.SX.sym('th',3)    # Orientation (Euler angles)
@@ -36,8 +38,8 @@ def mpc_predict_future_n_steps(x0, u0, x_target, n_steps, dt=0.1):
     # Compute thrust vector in body frame and convert to world frame
     T = u * max_thrust                              # Actual thrust in N
     acc_b = ca.vertcat(0, 0, ca.sum1(T)) / m        # Body-frame acceleration (along z-axis)
-    # acc_w = R @ acc_b - ca.vertcat(0, 0, 9.8)       # World-frame acceleration (gravity subtracted)
-    acc_w = R @ acc_b
+    acc_w = R @ acc_b - ca.vertcat(0, 0, 9.8)       # World-frame acceleration (gravity subtracted)
+    # acc_w = R @ acc_b
 
     # Compute torques from each motor's position and thrust
     fr_theta = math.radians(45)
@@ -77,9 +79,13 @@ def mpc_predict_future_n_steps(x0, u0, x_target, n_steps, dt=0.1):
     # Define MPC problem: state dim = 12, control dim = 4, horizon = n_steps
     nx, nu, N = 12, 4, n_steps
     Q = np.eye(nx) * 0.2; Q[0:3, 0:3] = np.eye(3) * 1.0  # State cost, prioritize position
-    R = np.eye(nu) * 0.1                                # Control effort penalty
+    R = np.eye(nu) * 0.01                                # Control effort penalty
 
-    opti = ca.Opti()
+    if optimizer == 'qpoases':
+        opti = ca.Opti('conic')
+    else:
+        opti = ca.Opti()
+    
     X = opti.variable(nx, N+1)      # Predicted states
     U = opti.variable(nu, N)        # Control inputs
 
@@ -88,7 +94,7 @@ def mpc_predict_future_n_steps(x0, u0, x_target, n_steps, dt=0.1):
 
     # Dynamics and input constraints
     for k in range(N):
-        opti.subject_to(X[:,k+1] == Ad @ X[:,k] + Bd @ U[:,k])
+        opti.subject_to(X[:,k+1] == Ad @ X[:,k] + Bd @ U[:,k] - ca.vertcat(0, 0, 0, 0, 0, 0, 0, 0, 9.8, 0, 0, 0) * dt)
         opti.subject_to(opti.bounded(0.01, U[:,k], 0.99))  # Input bounds [0.01, 0.99]
 
     # Objective function
@@ -103,7 +109,7 @@ def mpc_predict_future_n_steps(x0, u0, x_target, n_steps, dt=0.1):
     opti.minimize(cost)
 
     # Use IPOPT to solve the optimization problem (can replace with qpoases if installed)
-    opti.solver("ipopt")
+    opti.solver(optimizer)
     sol = opti.solve()
 
     u_opt = np.asarray(sol.value(U[:,0])).flatten()  # First control input
